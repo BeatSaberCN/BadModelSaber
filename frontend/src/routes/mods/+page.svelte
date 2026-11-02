@@ -111,7 +111,9 @@
     if (selectedGameVersion) searchParams.set("gameVersion", selectedGameVersion.id.toString());
     if (selectedCategories.length > 0) searchParams.set("category", selectedCategories.join(","));
     if (searchQuery.trim() !== "") searchParams.set("search", searchQuery);
-    if (selectedStatuses.length > 0 && selectedStatuses.every(s => s !== Status.Verified)) searchParams.set("status", selectedStatuses.join(","));
+    if (selectedStatuses.length > 0 && !(selectedStatuses.length === 1 && selectedStatuses[0] === Status.Verified)) {
+        searchParams.set("status", selectedStatuses.join(","));
+    }
     untrack(() => tick().then(() =>replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
   });
 </script>

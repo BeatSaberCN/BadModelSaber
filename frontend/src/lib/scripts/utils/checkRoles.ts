@@ -3,7 +3,7 @@ import { Status, UserPermissions, type AssetApiV3, type ProjectApiV3, type UserA
 type UserPermObj = { permissions: { sitewide: UserPermissions[], perGame: Record<string, UserPermissions[]> } }
 type CheckRolesInput = { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] };
 
-// #region Get Allowed Statuses
+// #region Get frontend Allowed Statuses
 export function getAllowedVersionStatuses(userPermObj: UserPermObj | undefined, allowedToBypass = false, gameName?: string | null): Status[] {
   let statusLookup = [Status.Verified];
   if (userPermObj) {

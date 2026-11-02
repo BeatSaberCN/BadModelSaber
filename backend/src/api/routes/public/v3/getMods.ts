@@ -1,5 +1,5 @@
 import { Logger } from "../../../../shared/Logger.ts";
-import { availableBackendLocaleCodes, GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, ProjectWhereOptions, Status, User, UserPermissions, Version, VersionApiV3, versionApiV3Schema } from "../../../../shared/Database.ts";
+import { availableBackendLocaleCodes, GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, ProjectWhereOptions, Status, User, UserPermissions, Version, VersionApiV3, versionApiV3Schema, VersionValidStatusesArray } from "../../../../shared/Database.ts";
 import { anyGameProcedure, anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
@@ -24,9 +24,9 @@ export const GetModsV3 = router({
         })
         .input(z.object({
             gameVersion: z.string().min(1).max(100).optional(),
-            status: z.array(z.enum(Status)).max(Object.values(Status).length).optional().default([Status.Verified, Status.Unverified]),
+            status: z.preprocess(v => typeof v === 'string' ? [v] : v, z.array(z.enum(Status)).max(Object.values(Status).length).optional().default([Status.Verified, Status.Unverified])),
             name: z.string().min(1).max(100).optional(),
-            authors: z.array(z.int()).min(1).max(20).optional(),
+            authors: z.preprocess(v => typeof v === 'string' ? [v] : v, z.array(z.int().min(1).max(20))).optional(),
             platform: z.string().min(1).max(100).optional(),
             language: z.enum(availableBackendLocaleCodes).optional(),
         }))
@@ -172,6 +172,7 @@ export const GetModsV3 = router({
         .input(z.object({
             projectId: z.number(),
             language: z.enum(availableBackendLocaleCodes).optional(),
+            status: z.preprocess(v => typeof v === 'string' ? [v] : v, z.array(z.enum(VersionValidStatusesArray)).default([...VersionValidStatusesArray]))
         }))
         .output(z.object({
             project: projectApiV3Schema,
@@ -185,12 +186,16 @@ export const GetModsV3 = router({
             if (!(await project.canView(ctx.user))) {
                 throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
             }
+
+            let whereOptions: WhereOptions<Version> = {
+                projectId: project.id
+            };
+            if (input.status) {
+                whereOptions.status = input.status;
+            }
+
             let versions = await Version.findAll({
-                where: {
-                    projectId: project.id,
-                    // removed since mod authors may not have access to all statuses
-                    // status: User.getAllowedStatuses(ctx.user, `mod`, project.gameName)
-                },
+                where: whereOptions,
                 order: [['semver', 'DESC']],
                 include: [GameVersion, Project],
             });
