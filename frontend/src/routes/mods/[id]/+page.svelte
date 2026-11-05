@@ -377,7 +377,7 @@
                 {m[`mods.uploadAndSaveIcon`]()}
               </Button>
             </div>
-            {#if checkRoles(user, [UserPermissions.Mods_Approval, UserPermissions.Mods_EditAll], project.gameName)}
+            {#if checkRoles(user, { hasAllOf:[UserPermissions.Mods_Approval, UserPermissions.Mods_EditAll]}, project.gameName)}
               {let editedNameId = $state(project.nameId);}
               <Label for="nameId">{m[`common.dataTable.nameId`]()}</Label>
               <div class="flex flex-row items-center gap-2">
