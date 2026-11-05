@@ -276,6 +276,14 @@ export const AdminRouter = router({
             Logger.log(`Set project ${ctx.project.id} featured status to ${input.isFeatured} by admin user ${ctx.userId}`);
             return ctx.project.toApiV3();
         }),
+        setNameId: loggedInProjectProcedure({ hasAllOf: [UserPermissions.Mods_Approval, UserPermissions.Mods_EditAll] }).input(z.object({
+            nameId: z.string().max(100),
+        })).mutation(async ({ ctx, input }) => {
+            ctx.project.nameId = input.nameId;
+            await ctx.project.save().catch(handleCatch(`setting project nameId`));
+            Logger.log(`Set project ${ctx.project.id} nameId to ${input.nameId} by admin user ${ctx.userId}`);
+            return ctx.project.toApiV3();
+        }),
     },
     version: {
         startDecompile: loggedInVersionProcedure([UserPermissions.Mods_Approval]).mutation(async ({ ctx }) => {

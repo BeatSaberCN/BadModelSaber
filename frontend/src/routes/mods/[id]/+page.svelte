@@ -377,6 +377,28 @@
                 {m[`mods.uploadAndSaveIcon`]()}
               </Button>
             </div>
+            {#if checkRoles(user, [UserPermissions.Mods_Approval, UserPermissions.Mods_EditAll], project.gameName)}
+              {let editedNameId = $state(project.nameId);}
+              <Label for="nameId">{m[`common.dataTable.nameId`]()}</Label>
+              <div class="flex flex-row items-center gap-2">
+                <Input id="nameId" bind:value={editedNameId} />
+                <Button
+                  variant="outline"
+                  disabled={!editedNameId || editedNameId.trim() === ""}
+                  onclick={() => {
+                    if (!editedNameId || editedNameId.trim() === "") {
+                      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidFile`]() });
+                      return;
+                    }
+                    trpc.internal.admin.project.setNameId
+                      .mutate({ id: project.id, nameId: editedNameId })
+                      .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), true))
+                      .catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
+                  }}>
+                  {m[`dialogs.save`]()}
+                </Button>
+              </div>
+            {/if}
             <Label for="summary">{m[`common.dataTable.summary`]()}</Label>
             <Input id="summary" bind:value={editedSummary} />
             <Label for="sourceurl">{m[`common.dataTable.sourceUrl`]()}</Label>
