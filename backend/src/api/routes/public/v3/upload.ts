@@ -109,7 +109,12 @@ export const uploadStuff = router({
                 gameName: defaultGame.name,
             }).then(async (asset) => {
                 Logger.debug(`Asset database entry created for user ${ctx.user?.id} with asset ID ${asset.id}`);
-                fs.mkdirSync(asset.folderPath, { recursive: true });
+                try {
+                    fs.mkdirSync(asset.folderPath, { recursive: true });
+                } catch (error) {
+                    Logger.error(`Error creating asset folder: ${parseErrorMessage(error)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create asset folder. Please contact a site administrator.' });
+                }
                 await input.asset.arrayBuffer().then(async (buffer) => {
                     fs.writeFileSync(asset.assetFilePath, Buffer.from(buffer));
                 }).catch((err) => {
@@ -181,7 +186,12 @@ export const uploadStuff = router({
                 await project.$add(`authors`, ctx.user);
                 project.authors = [ctx.user]; // set the authors array to include the current user for the api response
                 Logger.log(`Project database entry created for user ${ctx.user?.id} with project ID ${project.id}`);
-                fs.mkdirSync(project.folderPath, { recursive: true });
+                try {
+                    fs.mkdirSync(project.folderPath, { recursive: true });
+                } catch (error) {
+                    Logger.error(`Error creating project folder: ${parseErrorMessage(error)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create project folder. Please contact a site administrator.' });
+                }
                 await iconFile.arrayBuffer().then(async (buffer) => {
                     fs.writeFileSync(path.join(project.folderPath, iconName), Buffer.from(buffer));
                 }).catch((err) => {
@@ -329,8 +339,14 @@ export const uploadStuff = router({
                 await version.$set(`supportedGameVersions`, newGameVersions);
                 version.supportedGameVersions = newGameVersions; // ensure the supportedGameVersions property is updated in the version instance for toApi
                 Logger.log(`Version database entry created for user ${ctx.user?.id} with version ID ${version.id} for project ID ${project.id}`);
+
                 let versionFolder = path.join(project.folderPath, version.id.toString());
-                fs.mkdirSync(versionFolder, { recursive: true });
+                try {
+                    fs.mkdirSync(versionFolder, { recursive: true });
+                } catch (error) {
+                    Logger.error(`Error creating version folder: ${parseErrorMessage(error)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create version folder. Please contact a site administrator.' });
+                }
                 await input.modZip.arrayBuffer().then(async (buffer) => {
                     fs.writeFileSync(path.join(versionFolder, version.zipFileName), Buffer.from(buffer));
                     if (manifestJson) {
@@ -340,12 +356,14 @@ export const uploadStuff = router({
                     Logger.error(`Error saving version mod file: ${err.message}`)
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to save version mod file. Please contact a site administrator.' });
                 });
+
                 if (input.immidateSubmit) {
                     await version.setStatus(Status.Queue, ctx.user, "Version immidately submitted for review by uploader").catch((err) => {
                         Logger.error(`Error setting version status to queue: ${parseErrorMessage(err)}`);
                         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to submit version for review. Please contact a site administrator.' });
                     });
                 }
+
                 return await version.toApiV3();
             })
 
