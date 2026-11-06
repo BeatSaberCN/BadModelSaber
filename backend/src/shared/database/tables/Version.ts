@@ -168,8 +168,12 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
     }
 
+    get downloadUrlNoBase(): NonAttribute<string> {
+        return `${EnvConfig.server.fileRoute}/${this.projectId}/${this.id}/${this.zipFileName}`;
+    }
+    
     get downloadUrl(): NonAttribute<string> {
-        return new URL(`${EnvConfig.server.fileRoute}/${this.projectId}/${this.id}/${this.zipFileName}`, EnvConfig.server.backendUrl).href;
+        return new URL(this.downloadUrlNoBase, EnvConfig.server.backendUrl).href;
     }
 
     get versionFolderPath(): NonAttribute<string> {
@@ -815,7 +819,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             category: project.category.charAt(0).toUpperCase() + project.category.slice(1),
             downloads: [{
                 type: this.platform,
-                url: this.downloadUrl, //tbd
+                url: this.downloadUrlNoBase, // modassistant expects that the api not return the full path
                 hashMd5: this.contentHashes.map((hash) => {
                     return {
                         hash: hash.hash,
